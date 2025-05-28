@@ -1,12 +1,12 @@
 /amcl:
   ros__parameters:
     /bond_disable_heartbeat_timeout: true
-    alpha1: 0.2
-    alpha2: 0.2
-    alpha3: 0.2
-    alpha4: 0.2
-    alpha5: 0.2
-    always_reset_initial_pose: false
+    alpha1: 0.5
+    alpha2: 0.5
+    alpha3: 0.5
+    alpha4: 0.5
+    alpha5: 0.5
+    always_reset_initial_pose: true
     autostart_node: true
     base_frame_id: chassis
     beam_skip_distance: 0.5
@@ -29,8 +29,8 @@
     laser_model_type: likelihood_field
     map_topic: map
     max_beams: 60
-    max_particles: 2000
-    min_particles: 500
+    max_particles: 50
+    min_particles: 10
     odom_frame_id: odom
     pf_err: 0.05
     pf_z: 0.99
@@ -40,7 +40,7 @@
     robot_model_type: nav2_amcl::DifferentialMotionModel
     save_pose_rate: 0.5
     scan_topic: scan
-    set_initial_pose: false
+    set_initial_pose: true
     sigma_hit: 0.2
     start_type_description_service: true
     tf_broadcast: true

@@ -39,7 +39,7 @@ class EkfLocalization(Node):
         # YOUR CODE HERE
         pass
 
-    def laser_callback_(self, msg: LaserScan):
+    def detect_corners(self, msg: LaserScan):
 
         marker_points = Marker()
         marker_points.header = msg.header
@@ -64,19 +64,25 @@ class EkfLocalization(Node):
 
         
         # detect corners with infinity 
-        for i in range(len(msg.ranges)):
+        i = 0
+        indices = []
+        while i < len(msg.ranges):
             if math.isinf( msg.ranges[i] ) and not math.isinf( msg.ranges[(i+1)%len(msg.ranges)] )  and  msg.ranges[(i+1)%len(msg.ranges)] > 0.0 and msg.ranges[(i+1)%len(msg.ranges)]< msg.range_max*0.9 :
                 point = Point()
                 point.x = msg.ranges[(i+1)%len(msg.ranges)]*np.cos(msg.angle_min + msg.angle_increment*(i+1)%len(msg.ranges))
                 point.y = msg.ranges[(i+1)%len(msg.ranges)]*np.sin(msg.angle_min + msg.angle_increment*(i+1)%len(msg.ranges))
                 point.z = 0.0
+                indices.append(i+1)
                 marker_points.points.append(point)
+                i += 1
             elif not math.isinf( msg.ranges[i] ) and msg.ranges[i] > 0.0  and msg.ranges[i] <msg.range_max*0.9 and math.isinf( msg.ranges[(i+1)%len(msg.ranges)] ):
                 point = Point()
                 point.x = msg.ranges[i]*np.cos(msg.angle_min + msg.angle_increment*i)
                 point.y = msg.ranges[i]*np.sin(msg.angle_min + msg.angle_increment*i)
                 point.z = 0.0
                 marker_points.points.append(point)
+                indices.append(i)
+            i += 1
 
         # detect corners
         # kernel = np.pad(np.array([1,1,1,1,1,-10,1,1,1,1,1]), (0, len(msg.ranges)-11), 'constant', constant_values=(0.0,))
@@ -84,24 +90,22 @@ class EkfLocalization(Node):
         kernel = np.array([1.0,1.0,1.0,-6.0,1.0,1.0,1.0])
         diffrange = convolve(msg.ranges, kernel, mode='valid')
         curvature = diffrange * diffrange / (np.array(msg.ranges[3:-3]) **2 )
-        print(curvature)
 
         # sort by curvature
         sorted_indices = np.argsort(curvature)[::-1]
 
-        print(curvature[sorted_indices])
-        # get the first 10 points
 
         curvature_num_points = 0
 
-        indices = []
         for index in sorted_indices:
-            if curvature_num_points > 3:
+            if curvature_num_points > 20:
+                break
+            if curvature[index] < 0.1:
                 break
             if  math.isfinite(curvature[index] ) and math.isfinite(msg.ranges[(index+3)%len(msg.ranges)] ):
                 is_close = False
                 for idx in indices:
-                    if abs(index - idx) < 6:
+                    if abs(index - idx) < 4:
                         is_close = True
                         break
                 if not is_close:
@@ -109,10 +113,14 @@ class EkfLocalization(Node):
                     point = Point()
                     point.x = msg.ranges[(index+3)%len(msg.ranges)]*np.cos(msg.angle_min + msg.angle_increment*((index+3)%len(msg.ranges)))
                     point.y = msg.ranges[(index+3)%len(msg.ranges)]*np.sin(msg.angle_min + msg.angle_increment*((index+3)%len(msg.ranges)))
-                    point.z = 0.
+                    point.z = 0.3* (curvature_num_points+1)
                     marker_points.points.append(point)
                     curvature_num_points += 1
+        return marker_points
 
+    def laser_callback_(self, msg: LaserScan):
+
+        marker_points = self.detect_corners(msg)
         self.marker_publisher_.publish(marker_points)
 
         # Aqui use los puntos detectados ( en marker_points.points ) para realizar la correccion usando EKF
