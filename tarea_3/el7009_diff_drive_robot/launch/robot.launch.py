@@ -82,6 +82,19 @@ def generate_launch_description():
                     output='screen',)]
     )
 
+    # Static transform publisher 
+    static_transform_publisher_map_odom = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher',
+        arguments=[
+            # '--x', '-144.0', '--y', '38', '--z', '0.0',
+            '--x', '0.0', '--y', '0.0', '--z', '0.0',
+            '--roll', '0', '--pitch', '0', '--yaw', '0',
+            '--frame-id', '/map',
+            '--child-frame-id', '/industrial-warehouse'
+        ]
+    )
     # Launch them all!
     return LaunchDescription([
         # Declare launch arguments
@@ -94,5 +107,6 @@ def generate_launch_description():
         gazebo_server,
         gazebo_client,
         ros_gz_bridge,
-        spawn_diff_bot
+        spawn_diff_bot,
+        static_transform_publisher_map_odom,
     ])

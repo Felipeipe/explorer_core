@@ -19,6 +19,7 @@ install(
 install(
   PROGRAMS
   scripts/ekf_localization.py
+  scripts/ekf_slam.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
