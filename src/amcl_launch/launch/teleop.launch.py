@@ -11,22 +11,6 @@ from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, Grou
 def generate_launch_description():
 
     # Package name
-    package_name='amcl_launch'
-
-    # Launch configurations
-
-    map_yaml = os.path.join(get_package_share_directory(package_name),'map','mapa.yaml')
-
-    # Launch the amcl node
-    amcl_params = os.path.join(get_package_share_directory(package_name),'config','amcl.yaml')
-    amcl_node = Node(
-        package="nav2_amcl",
-        executable="amcl",
-        name="amcl",
-        parameters=[amcl_params],
-        
-    )
-
     joy_node = Node(
         package='joy',
         executable='joy_node',
@@ -40,7 +24,6 @@ def generate_launch_description():
         executable='teleop_node',
         name='teleop_twist_joy_node',
         parameters=[{'axis_linear.x': 1, 'axis_angular.yaw': 0, 'scale_linear': 1.1, 'scale_angular': 1.0}],
-        remappings=[('cmd_vel', 'cmd_vel')],
         output='screen'
     )
 

@@ -13,27 +13,13 @@ def generate_launch_description():
     # Package name
     package_name='amcl_launch'
 
-    # Launch configurations
-
-    map_yaml = os.path.join(get_package_share_directory(package_name),'map','mapa.yaml')
-
-    # Launch the amcl node
-    amcl_params = os.path.join(get_package_share_directory(package_name),'config','amcl.yaml')
-    amcl_node = Node(
-        package="nav2_amcl",
-        executable="amcl",
-        name="amcl",
-        parameters=[amcl_params],
-        
-    )
-
      
     teleop_twist_node = Node(
         package='teleop_twist_keyboard',
         executable='teleop_twist_keyboard',
         name='teleop_twist_keyboard',
         # parameters=[{ 'scale_linear': 1.1, 'scale_angular': 1.0}],
-        remappings=[('cmd_vel', 'cmd_vel')],
+        remappings=[('/cmd_vel', '/cmd_vel')],
         output='screen'
     )
 

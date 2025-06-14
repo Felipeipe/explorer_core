@@ -2,13 +2,13 @@ import os
 from re import L
 from launch.frontend.parser import parse_if_substitutions
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 from launch import LaunchDescription, descriptions
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from ament_index_python.packages import get_package_share_directory
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, GroupAction
-from scipy.signal import resample
 
 def generate_launch_description():
 
@@ -16,8 +16,9 @@ def generate_launch_description():
     package_name='amcl_launch'
 
     # Launch configurations
+    use_joy = LaunchConfiguration('use_joy', default = True)
 
-    playback = LaunchConfiguration('playback', default=False)
+    playback = LaunchConfiguration('playback', default = False)
     map_yaml = os.path.join(get_package_share_directory(package_name),'map','mapa.yaml')
 
     # Launch the amcl node
@@ -63,16 +64,30 @@ def generate_launch_description():
                     get_package_share_directory('el7009_diff_drive_robot'),'launch','rsp.launch.py'
                 )]), launch_arguments={'use_sim_time': 'true', 'urdf': urdf_path}.items()
     )
-    
-    
-    # Launch them all!
-    description =  LaunchDescription([
-        # Declare launch arguments
+    teleop_joy_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare(package_name),
+                'launch',
+                'teleop.launch.py'
+                ]
+            )
+        ),
+        condition=IfCondition(use_joy)
+    )
 
-        # Launch the nodes
-        amcl_node,
-        map_server,
+    #  Launch them all!
+    description = LaunchDescription([
+    DeclareLaunchArgument(
+        'use_joy',
+        default_value='true',
+        description='Use joystick (true) or keyboard teleop (false)'
+    ),
+    amcl_node,
+    map_server,
+    teleop_joy_node,
     ])
+
     if playback:
         description.add_action(odom_to_tf)
         description.add_action(rsp)
