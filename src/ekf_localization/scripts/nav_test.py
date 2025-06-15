@@ -1,77 +1,77 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+import matplotlib.pyplot as plt
+from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Joy
 from tf_transformations import euler_from_quaternion
-
-import numpy as np
 import os
 
-class LocalizationTester(Node):
+class OdometryPlotter(Node):
 
     def __init__(self):
-        super().__init__('localization_tester')
-        self._gt_sub = self.create_subscription(
+        super().__init__('odometry_plotter')
+
+        self.gt_sub = self.create_subscription(
             PoseStamped,
             '/ground_truth_pose',
             self.gt_callback,
-            10
-        )
-        self._estimated_pose_sub = self.create_subscription(
-            PoseWithCovarianceStamped,
-            '/amcl_pose',
-            self.estimated_pose_callback,
-            10
-        )
-        self._joy_sub = self.create_subscription(
+            10)
+        self.joy_sub = self.create_subscription(
             Joy,
             '/joy',
             self.joy_callback,
-            10 
-        )
-        self.gt_poses = []
-        self.est_poses = []
-        self._saved = False       
-    def gt_callback(self, msg:PoseStamped):
-        q = msg.pose.orientation
-        x = msg.pose.position.x
-        y = msg.pose.position.y
-        theta = euler_from_quaternion([
-            q.x,
-            q.y,
-            q.z,
-            q.w
-        ])[2]
-        # self.get_logger().info(f"GT Pose: x={msg.pose.position.x}, y={msg.pose.position.y}")
-        pose = [x, y, theta]
-        self.get_logger().info(f'guardando pose {pose}')
-        self.gt_poses.append(pose)
-    def estimated_pose_callback(self, msg: PoseWithCovarianceStamped):
-        q = msg.pose.pose.orientation
-        theta = euler_from_quaternion([q.x,q.y,q.z,q.w])[2]
-        self.est_poses.append([
-            msg.pose.pose.position.x,
-            msg.pose.pose.position.y,
-            theta
-        ])
-    def joy_callback(self, msg: Joy):
-        if msg.buttons[7] == 1 and not self._saved:
-            self.get_logger().info(f"Positions saved in {os.getcwd()}")
-            np.save('gt_poses.npy', np.array(self.gt_poses))
-            np.save('est_poses.npy', np.array(self.est_poses))
-            self._saved = True
+            10
+        ) 
+        self._loop_rate = self.create_rate(10, self.get_clock())
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
+        self.plot = False
+        self.positions = []
 
+    def gt_callback(self,msg):
+        self.x = msg.pose.position.x
+        self.y = msg.pose.position.y
+        orientation = [
+            msg.pose.orientation.x,
+            msg.pose.orientation.y,
+            msg.pose.orientation.z,
+            msg.pose.orientation.w
+        ]
+
+        _,_,self.theta = euler_from_quaternion(orientation)
+        self.positions.append([self.x, self.y, self.theta])
+
+    def joy_callback(self,msg):  
+        if msg.buttons[7] == 1 and not self.plot:
+            self.plot = True 
+            self.plot_odometry()
+    def plot_odometry(self):
+        if not self.positions:
+            self.get_logger().info("No hay datos de odometría para graficar.")
+            return
+        x_vals, y_vals, _ = zip(*self.positions)  # Descomprimir listas x e y
+        
+        plt.figure(figsize=(6, 6))
+        plt.plot(x_vals, y_vals, color='b', label="Trayectoria")
+        plt.xlabel("X (m)")
+        plt.ylabel("Y (m)")
+        plt.title("Trayectoria del Robot")
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.savefig('Ground_truth_trajectory.png')
+        self.get_logger().info(f'Plotted correctly, figure saved in {os.getcwd()}')
+        self.plot = False    
+        
+    
 def main(args=None):
     rclpy.init(args=args)
-    tester = LocalizationTester()
-    tester.get_logger().info('Started data recollection\n Press the start button to save the trajectories')
-    rclpy.spin(tester)
-    tester.destroy_node()
+    plotter = OdometryPlotter()
+    plotter.get_logger().info('Node started successfully')
+    rclpy.spin(plotter)
+    plotter.destroy_node()
     rclpy.shutdown()
 
-        
-        
-
-if __name__== '__main__':
+if __name__ == '__main__':
     main()
