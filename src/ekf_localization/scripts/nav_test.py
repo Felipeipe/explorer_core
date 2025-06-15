@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from sensor_msgs.msg import Joy
+from tf_transformations import euler_from_quaternion
 
 import numpy as np
 import os
@@ -33,14 +34,26 @@ class LocalizationTester(Node):
         self.est_poses = []
         self._saved = False       
     def gt_callback(self, msg:PoseStamped):
-        self.gt_poses.append([
-            msg.pose.position.x,
-            msg.pose.position.y
-        ])
+        q = msg.pose.orientation
+        x = msg.pose.position.x
+        y = msg.pose.position.y
+        theta = euler_from_quaternion([
+            q.x,
+            q.y,
+            q.z,
+            q.w
+        ])[2]
+        # self.get_logger().info(f"GT Pose: x={msg.pose.position.x}, y={msg.pose.position.y}")
+        pose = [x, y, theta]
+        self.get_logger().info(f'guardando pose {pose}')
+        self.gt_poses.append(pose)
     def estimated_pose_callback(self, msg: PoseWithCovarianceStamped):
+        q = msg.pose.pose.orientation
+        theta = euler_from_quaternion([q.x,q.y,q.z,q.w])[2]
         self.est_poses.append([
             msg.pose.pose.position.x,
-            msg.pose.pose.position.y
+            msg.pose.pose.position.y,
+            theta
         ])
     def joy_callback(self, msg: Joy):
         if msg.buttons[7] == 1 and not self._saved:
