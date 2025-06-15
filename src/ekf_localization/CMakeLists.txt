@@ -16,6 +16,7 @@ install(
   PROGRAMS
   scripts/ekf_localization.py
   scripts/ekf_slam.py
+  scripts/nav_test.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
