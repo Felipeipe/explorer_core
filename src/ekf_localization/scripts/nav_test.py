@@ -12,6 +12,12 @@ class OdometryPlotter(Node):
 
     def __init__(self):
         super().__init__('odometry_plotter')
+        self.declare_parameter('plot_filename', 'Ground_truth_trajectory.png')
+        self.declare_parameter('plot_title', 'xd')
+        self.declare_parameter('test_pose_label', 'AMCL')
+        self.plot_filename = self.get_parameter('plot_filename').get_parameter_value().string_value
+        self.plot_title = self.get_parameter('plot_title').get_parameter_value().string_value
+        self.test_pose_label = self.get_parameter('test_pose_label').get_parameter_value().string_value
 
         self.gt_sub = self.create_subscription(
             PoseStamped,
@@ -79,12 +85,12 @@ class OdometryPlotter(Node):
         est_orient_x = np.cos(est_theta)
         est_orient_y = np.sin(est_theta)
         skip = 5 
-        gt_skip = 100 
+        gt_skip = 200
 
-        plt.figure(figsize=(6, 6))
+        plt.figure(figsize=(10, 6))
 
         plt.plot(gt_x, gt_y, color='blue', linestyle='-', label='Trayectoria real del robot')
-        plt.plot(est_x, est_y, color='red', linestyle='-', label='Trayectoria AMCL (sin calibrar)')
+        plt.plot(est_x, est_y, color='red', linestyle='-', label=self.test_pose_label)
 
         plt.quiver(gt_x[::gt_skip], gt_y[::gt_skip],
                 gt_orient_x[::gt_skip], gt_orient_y[::gt_skip],
@@ -96,11 +102,11 @@ class OdometryPlotter(Node):
 
         plt.xlabel("X (m)")
         plt.ylabel("Y (m)")
-        plt.title("Trayectoria real vs AMCL sin calibrar")
+        plt.title(self.plot_title)
         plt.legend(loc='best')
         plt.grid(True)
         plt.axis('equal')
-        plt.savefig('Ground_truth_trajectory.png')
+        plt.savefig(self.plot_filename)
         self.get_logger().info(f'Plotted correctly, figure saved in {os.getcwd()}')
         self.plot = False
 

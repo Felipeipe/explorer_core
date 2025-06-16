@@ -104,9 +104,9 @@ def generate_launch_description():
         # Launch the nodes
         rviz2,
         rsp,
-        gazebo_server,
-        gazebo_client,
-        ros_gz_bridge,
-        spawn_diff_bot,
+#        gazebo_server,
+#        gazebo_client,
+#        ros_gz_bridge,
+#        spawn_diff_bot,
         static_transform_publisher_map_odom,
     ])
