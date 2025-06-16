@@ -1,0 +1,105 @@
+% Template:     Informe LaTeX\end{figur\end{figure}e}
+% Documento:    Archivo principal
+% Versión:      8.2.7 (21/08/2023)
+% Codificación: UTF-8
+%
+% Autor: Pablo Pizarro R.
+%        pablo@ppizarror.com
+%
+% Manual template: [https://latex.ppizarror.com/informe]
+% Licencia MIT:    [https://opensource.org/licenses/MIT]
+
+% CREACIÓN DEL DOCUMENTO
+\documentclass[
+	spanish, % Idioma: spanish, english, etc.
+	letterpaper,
+    oneside
+]{article}
+
+% INFORMACIÓN DEL DOCUMENTO
+\def\documenttitle {Informe Tarea 1}
+\def\documentsubtitle {Tarea 1}
+\def\documentsubject {Fundamentos de Control de Sistemas}
+
+\def\documentauthor {Phillipe Joos, Franco Serey, Felipe González}
+\def\coursename {Fundamentos de control de sistemas}
+\def\coursecode {EL-4113}
+\def\universityname{Universidad de Chile}
+\def\universityfaculty {Facultad de Ciencias Físicas y Matemáticas}
+\def\universitydepartment {Departamento de Ingeniería Eléctrica}
+\def\universitydepartmentimage {departamentos/die.png}
+\def\universitydepartmentimagecfg {height=1.9cm}
+\def\universitylocation {Santiago de Chile}
+
+
+% % INTEGRANTES, PROFESORES Y FECHAS
+\def\authortable {
+	\begin{tabular}{ll}
+        Estudiantes:
+		& 
+            \begin{tabular}[t]{l}
+                Felipe González P.\\
+                Phillipe Joos F.\\
+                Franco Serey S.
+		  \end{tabular} \\
+        \\
+		Profesor:
+		& 
+            \begin{tabular}[t]{l}
+			Roberto Cárdenas D.
+		  \end{tabular} \\
+        \\
+            Auxiliares:
+            & 
+            \begin{tabular}[t]{l}
+			Arturo Toro B\\
+                Lukas Gleisner J.
+		  \end{tabular} \\
+        \\
+
+		\multicolumn{2}{l}{Fecha de entrega: \today} \\
+	\end{tabular}
+}
+
+% IMPORTACIÓN DEL TEMPLATE
+\input{template}
+
+% INICIO DE PÁGINAS
+\begin{document}
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{0.45cm}
+
+% Portada
+\templatePortrait
+
+% CONFIGURACIÓN DE PÁGINA Y ENCABEZADOS
+\templatePagecfg
+
+%\begin{abstractd}
+%\input{paginas/0. Resumen} %% Lo comenté pq no se si será necesario
+%\end{abstractd}
+% TABLA DE CONTENIDOS - ÍNDICE
+\templateIndex
+
+% CONFIGURACIONES FINALES
+\templateFinalcfg
+
+% ======================= INICIO DEL DOCUMENTO =======================
+\clearpage
+\input{paginas/1. introduccion}
+
+\newpage
+\input{paginas/2. trabajo_teorico}
+
+\newpage
+\input{paginas/3. modelacion}
+\input{paginas/4. simulacion}
+
+\newpage
+\input{paginas/5. conclusiones}
+
+\newpage
+\input{paginas/6. bibliografia}
+
+% FIN DEL DOCUMENTO
+\end{document}

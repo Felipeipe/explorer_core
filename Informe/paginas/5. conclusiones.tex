@@ -1,0 +1,21 @@
+\section{Conclusiones}
+
+A partir del desarrollo realizado, se concluye que el sistema de control diseñado permite regular de manera efectiva el 
+voltaje de la carga a 250 [V], cumpliendo con el objetivo planteado. La estrategia de lazos anidados 
+utilizada, junto con el diseño de controladores PI por método del lugar de las raíces, permitió una coordinación 
+adecuada entre la celda de combustible y el banco de baterías, considerando las diferentes dinámicas de cada subsistema.
+
+En las simulaciones se observó que el sistema responde correctamente frente a perturbaciones en la carga. La batería actúa 
+de forma inmediata ante cambios bruscos gracias a su mayor ancho de banda, mientras que la celda de combustible 
+asume gradualmente la demanda, tendiendo a suministrar la totalidad de la corriente en estado estacionario.
+
+Además, se evidenció la importancia de implementar estrategias como el anti-windup, ya que su ausencia produce 
+saturaciones prolongadas, sobrepasos elevados y pérdida del control. Por otro lado, la inclusión del término de prealimentación 
+(feedforward) mejora la respuesta dinámica del sistema, reduciendo los sobrepasos y tiempos en zona de saturación, 
+lo que permite una actuación más eficiente de los controladores.
+
+Finalmente, la modelación en Simulink permitió observar el comportamiento del sistema bajo distintos escenarios y validar la eficacia de 
+los controladores implementados. El sistema mostró un comportamiento coherente con el análisis teórico, y se destaca la robustez 
+del control frente a cambios abruptos en la resistencia de carga.
+
+\newpage

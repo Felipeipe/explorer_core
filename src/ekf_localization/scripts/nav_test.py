@@ -6,6 +6,7 @@ from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from sensor_msgs.msg import Joy
 from tf_transformations import euler_from_quaternion
 import os
+import numpy as np
 
 class OdometryPlotter(Node):
 
@@ -71,19 +72,38 @@ class OdometryPlotter(Node):
     def plot_odometry(self):
         gt_x, gt_y, gt_theta = zip(*self.ground_truth)  # Descomprimir listas x e y
         est_x, est_y, est_theta = zip(*self.estimation)
+        gt_x, gt_y, gt_theta = np.array(gt_x), np.array(gt_y), np.array(gt_theta)  
+        est_x, est_y, est_theta = np.array(est_x), np.array(est_y), np.array(est_theta)  
+        gt_orient_x = np.cos(gt_theta)
+        gt_orient_y = np.sin(gt_theta)
+        est_orient_x = np.cos(est_theta)
+        est_orient_y = np.sin(est_theta)
+        skip = 5 
+        gt_skip = 100 
 
         plt.figure(figsize=(6, 6))
-        plt.plot(gt_x, gt_y, label="Trayectoria real del robot")
-        plt.plot(est_x, est_y, label='Trayectoria según AMCL (sin calibrar)')        
+
+        plt.plot(gt_x, gt_y, color='blue', linestyle='-', label='Trayectoria real del robot')
+        plt.plot(est_x, est_y, color='red', linestyle='-', label='Trayectoria AMCL (sin calibrar)')
+
+        plt.quiver(gt_x[::gt_skip], gt_y[::gt_skip],
+                gt_orient_x[::gt_skip], gt_orient_y[::gt_skip],
+                color='blue', scale=20, width=0.005)
+
+        plt.quiver(est_x[::skip], est_y[::skip],
+                est_orient_x[::skip], est_orient_y[::skip],
+                color='red', scale=20, width=0.005)
+
         plt.xlabel("X (m)")
         plt.ylabel("Y (m)")
         plt.title("Trayectoria real vs AMCL sin calibrar")
         plt.legend(loc='best')
         plt.grid(True)
+        plt.axis('equal')
         plt.savefig('Ground_truth_trajectory.png')
         self.get_logger().info(f'Plotted correctly, figure saved in {os.getcwd()}')
-        self.plot = False    
-        
+        self.plot = False
+
     
 def main(args=None):
     rclpy.init(args=args)
