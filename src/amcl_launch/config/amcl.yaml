@@ -29,7 +29,7 @@
     laser_model_type: likelihood_field
     map_topic: map
     max_beams: 70
-    max_particles: 5000
+    max_particles: 6000
     min_particles: 500
     odom_frame_id: odom
     pf_err: 0.05

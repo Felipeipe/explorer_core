@@ -7,15 +7,12 @@ import math
 import rosidl_parser
 import threading
 import std_msgs.msg
-from sensor_msgs.msg import LaserScan
-from sensor_msgs.msg import PointCloud2
+from sensor_msgs.msg import LaserScan, PointCloud2
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, Point, Twist
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
 from rclpy.executors import ExternalShutdownException
 from scipy.signal import convolve
-import tf
 from tf_transformations import quaternion_from_euler, quaternion_multiply
 import os
 
@@ -30,16 +27,50 @@ def conv_circ( signal, ker ):
         signal and ker must have same shape
     '''
     return np.real(np.fft.ifft( np.fft.fft(signal)*np.fft.fft(ker) ))
+def J_h(mu,X_l):
+    mu_x, mu_y, mu_theta = mu
+    x_l, y_l = X_l
+    num = np.sqrt((mu_x-x_l)**2 + (mu_y-y_l)**2) 
+    J_h11 = (x_l - mu_x)/num
+    J_h12 = (y_l - mu_y)/num
+    return np.array([
+        [J_h11, J_h12,  0],
+        [J_h12, J_h11, -1]])
+def h(mu, X_l):
+    mu_x, mu_y, mu_theta = mu
+    x_l, y_l = X_l
+    r = np.sqrt((mu_x-x_l)**2 + (mu_y-y_l)**2) 
+    phi = np.arctan2(y_l - mu_y, x_l - mu_x)
+    return np.array([r,phi])
 
+def J_f(mu, u, dt):
+    mu_x, mu_y, mu_theta = mu
+    V, omega = u
+    a = V/omega
+    dtheta = omega*dt
+    J_f13 = a*(-np.cos(mu_theta) + np.cos(mu_theta + dtheta))
+    J_f23 = a*(-np.sin(mu_theta) + np.sin(mu_theta + dtheta))
+    return np.array([[1, 0, J_f13],
+                     [0, 1, J_f23],
+                     [0, 0, 1    ]])
+def f(mu, u, dt): 
+    mu_x, mu_y, mu_theta = mu
+    V, omega = u
+    dtheta = omega*dt
+    a = V/omega
+    J_f13 = a*(np.cos(mu_theta) - np.cos(mu_theta + dtheta))
+    J_f23 = a*(-np.sin(mu_theta) + np.sin(mu_theta + dtheta))
+    return np.array([mu_x + J_f23, mu_y + J_f13, mu_theta + dtheta])
 class EkfLocalization(Node):
 
     def __init__(self):
         super().__init__('ekf_localization')
-        self.laser_subscriber_ = self.create_subscription(LaserScan, 'scan', self.laser_callback_, 10)
-        self.odom_subscriber_ = self.create_subscription(Odometry, 'odom', self.odom_callback_, 10)
-        self.marker_publisher_ = self.create_publisher(Marker, 'marker', 10)
+        self.laser_subscriber_ = self.create_subscription(LaserScan, '/scan', self.laser_callback_, 10)
+        self.odom_subscriber_ = self.create_subscription(Odometry, '/odom', self.odom_callback_, 10)
+        self.command_subscriber_ = self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
+        self.marker_publisher_ = self.create_publisher(Marker, '/marker', 10)
         self.publish_timer_ = self.create_timer(0.1, self.publish_timer_callback_)
-        self.estimated_pose_publisher_ = self.create_publisher(PoseWithCovarianceStamped, 'ekf_pose', 10)
+        self.estimated_pose_publisher_ = self.create_publisher(PoseWithCovarianceStamped, '/ekf_pose', 10)
         self.estimated_pose_ = PoseWithCovarianceStamped()
         
         # Estado del EKF, use estas variables para implementar el filtro
@@ -57,8 +88,10 @@ class EkfLocalization(Node):
 
         map_path = os.path.join(get_package_share_directory('amcl_launch'),'map','map_ekf.txt')
         self.map_ = np.loadtxt(map_path)
+        self.u = np.zeros(2)
 
-        
+    def cmd_vel_callback(self, msg):
+        self.u[0], self.u[1] = msg.linear.x, msg.angular.z
         
     def publish_timer_callback_(self):
         self.estimated_pose_.pose.pose.position.x = self.estimated_pose_2d[0]
@@ -69,10 +102,10 @@ class EkfLocalization(Node):
         self.estimated_pose_.pose.pose.orientation.z = q[2]
         self.estimated_pose_.pose.pose.orientation.w = q[3]
 
-        self.estimated_pose_.pose.covariance[0] = self.covariance_2d[0,0]
-        self.estimated_pose_.pose.covariance[1] = self.covariance_2d[0,1]
-        self.estimated_pose_.pose.covariance[6] = self.covariance_2d[1,0]
-        self.estimated_pose_.pose.covariance[7] = self.covariance_2d[1,1]
+        self.estimated_pose_.pose.covariance[0]  = self.covariance_2d[0,0]
+        self.estimated_pose_.pose.covariance[1]  = self.covariance_2d[0,1]
+        self.estimated_pose_.pose.covariance[6]  = self.covariance_2d[1,0]
+        self.estimated_pose_.pose.covariance[7]  = self.covariance_2d[1,1]
         self.estimated_pose_.pose.covariance[35] = self.covariance_2d[2,2]
 
         self.estimated_pose_publisher_.publish(self.estimated_pose_)
@@ -170,6 +203,7 @@ class EkfLocalization(Node):
             ## prediga la posicion del punto vista desde la pose del robot
             ## YOUR CODE HERE:
             prediction = np.array([0.0, 0.0])
+            
             print(f"prediction: {prediction}")
             predicted_measurements[i] = prediction
             pass
@@ -181,7 +215,7 @@ class EkfLocalization(Node):
             ## actualiza la posicion estimada con la medicion:
             ## YOUR CODE HERE:
             pass
-
+            
 
     def odom_callback_(self, msg: Odometry):
         # use odometry to do the prediction step of the ekf
