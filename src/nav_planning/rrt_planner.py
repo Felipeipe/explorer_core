@@ -9,8 +9,8 @@ class Node:
         # The parent list may be modified when the node is added to a tree,
         # to contain the index of the parent node and the parent node itself
         # For the first node in the tree, the parent list is an empty list
-        self.position = None
-        self.parent = None
+        self.position = (x, y)
+        self.parent = []
 
 
 class RRTPlanner:
@@ -27,7 +27,7 @@ class RRTPlanner:
         self._map  = input_map
 
         # TODO: your code here, map size depend of input map's dimensions (in pixels)
-        self._map_height, self._map_width = None
+        self._map_height, self._map_width = self._map.shape
 
         self._nb_iterations = nb_iterations
         self._traverse_distance = traverse_distance
@@ -36,15 +36,16 @@ class RRTPlanner:
 
         # TODO: if the initial position is None, make it the center of the map (or approximately the center,
         # given a priori unknown input map dimensions)
+
         if self._init_position is None:
             # your code here
-            self._init_position = None
+            self._init_position = (self._map_width//2, self._map_height//2)
 
         self._target_position = target_position
-
         # Initialize tree
         self._tree = []
-
+        self._tree.append(Node(self._init_position[0], self._init_position[1]))
+        
         # TODO: the first Node of the tree must have the initial position as position,
         # and no parents (empty list for parent)
         # self._tree.append(???)
@@ -62,10 +63,9 @@ class RRTPlanner:
     def reset_tree(self):
         # The tree has to go back to only have a single node whose position is the
         # initial position, and that has no parents
-
         # TODO: your code here.
-        #self._tree = ???
-        pass
+        first_node = self._tree[0]
+        self._tree = [first_node]
 
 
     def set_init_position(self, init_position):
@@ -80,9 +80,8 @@ class RRTPlanner:
     def sample_random_position(self):
 
         # TODO: sample a position (x, y) uniformly within the input map (class member) bounds
-
-        sampled_x = None # replace
-        sampled_y = None # replace
+        sampled_x = np.random.randint(0, self._map_width + 1)
+        sampled_y = np.random.randint(0, self._map_height + 1)
 
         return (sampled_x, sampled_y)
 
@@ -96,11 +95,16 @@ class RRTPlanner:
         # NOTE: don't try to optimize your code
 
         # TODO: your code here
-
-
-        """min_distance_idx = ???"""
-        """return min_distance_idx, self._tree[min_distance_idx]"""
-        return None, None
+        d = float('inf')
+        min_distance_idx = 0
+        pos_x, pos_y = position
+        for i, node in enumerate(self._tree):
+            delta_x, delta_y = pos_x - node.position[0], pos_y - node.position[1]
+            delta_d = np.sqrt(delta_x**2 + delta_y**2)
+            if delta_d < d:
+                min_distance_idx = i
+                d = delta_d
+        return min_distance_idx, self._tree[min_distance_idx]
 
 
     def get_new_position(self, random_position, nearest_position):
@@ -114,12 +118,23 @@ class RRTPlanner:
         # stay inside the map.
 
         # NOTE: arctan2 may be useful
+        delta_x, delta_y = random_position[0]-nearest_position[0], random_position[1] - nearest_position[1]
+        theta = np.arctan2(delta_y, delta_x)
 
-        """new_x = ???
-        new_y = ???"""
+        new_x = int(np.round(self._traverse_distance*np.cos(theta), 0))
+        new_y = int(np.round(self._traverse_distance*np.sin(theta), 0))
 
-        """return new_x, new_y"""
-        return None, None
+        if new_x > self._map_width:
+            new_x = self._map_width
+        elif new_x < 0:
+            new_x = 0
+
+        if new_y > self._map_height:
+            new_y = self._map_height
+        elif new_y < 0:
+            new_y = 0
+
+        return new_x, new_y
 
 
     def recover_plan(self):
@@ -131,9 +146,12 @@ class RRTPlanner:
         # Then reverse the list (invert the order of all of its elements) and return it as a
         # numpy array.
 
-        plan = []
-
-        # TODO: your code here
+        plan = [self._target_position[0], self._target_position[1]]
+        p = self._tree[-1] 
+        while len(p) > 0:
+            plan.append([p[0], p[1]])
+            p = p.parent
+        plan = plan.reverse()
 
         return np.array(plan)
 
@@ -145,6 +163,16 @@ class RRTPlanner:
         # If a collision is found, return True, else, return False.
 
         # Hint: See how collisions are handled in pure_pursuit.py
+        for i in [-2, 0, 2]:
+            for j in [-2, 0, 2]:
+                if self._map[np.clip(int(new_position[1]) + j, 0,
+                                     self._map_height - 1),
+                             np.clip(int(new_position[0]) + i, 0,
+                                     self._map_width - 1)] == 1:
+
+                    return True
+
+        return False
         """
         for i in [-2, 0, 2]:
             for j in [-2, 0, 2]:

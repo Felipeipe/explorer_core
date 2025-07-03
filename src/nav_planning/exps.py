@@ -35,7 +35,7 @@ def add_map_obstacles_3(input_map):
 
 def rrt_exps():
 
-    max_attemts = 1
+    max_attempts = 1
 
     input_map = np.zeros((64, 64))
     add_map_obstacles_2(input_map)
@@ -52,7 +52,7 @@ def rrt_exps():
             rrt_planner.set_random_seed(counter)
             plan = rrt_planner.generate_rrt()
             counter+=1
-            if counter > max_attemts:
+            if counter > max_attempts:
                 break
 
     rrt_planner.plot_rrt()
