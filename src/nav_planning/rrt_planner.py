@@ -64,7 +64,7 @@ class RRTPlanner:
         # The tree has to go back to only have a single node whose position is the
         # initial position, and that has no parents
         # TODO: your code here.
-        first_node = self._tree[0]
+        first_node = Node(self._init_position[0], self._init_position[1]) 
         self._tree = [first_node]
 
 
@@ -121,8 +121,8 @@ class RRTPlanner:
         delta_x, delta_y = random_position[0]-nearest_position[0], random_position[1] - nearest_position[1]
         theta = np.arctan2(delta_y, delta_x)
 
-        new_x = int(np.round(self._traverse_distance*np.cos(theta), 0))
-        new_y = int(np.round(self._traverse_distance*np.sin(theta), 0))
+        new_x = nearest_position[0] + int(np.round(self._traverse_distance*np.cos(theta), 0))
+        new_y = nearest_position[1] + int(np.round(self._traverse_distance*np.sin(theta), 0))
 
         if new_x > self._map_width:
             new_x = self._map_width
@@ -146,13 +146,12 @@ class RRTPlanner:
         # Then reverse the list (invert the order of all of its elements) and return it as a
         # numpy array.
 
-        plan = [self._target_position[0], self._target_position[1]]
+        plan = [[self._target_position[0], self._target_position[1]]]
         p = self._tree[-1] 
-        while len(p) > 0:
-            plan.append([p[0], p[1]])
-            p = p.parent
-        plan = plan.reverse()
-
+        while len(p.parent) > 0:
+            plan.append([p.position[0], p.position[1]])
+            p = p.parent[1]
+        plan.reverse()
         return np.array(plan)
 
 
@@ -169,17 +168,7 @@ class RRTPlanner:
                                      self._map_height - 1),
                              np.clip(int(new_position[0]) + i, 0,
                                      self._map_width - 1)] == 1:
-
                     return True
-
-        return False
-        """
-        for i in [-2, 0, 2]:
-            for j in [-2, 0, 2]:
-                if ???
-                    return ???"""
-
-        """return ???"""
         return False
 
 
@@ -201,26 +190,27 @@ class RRTPlanner:
         # - if the above condition of the distance is fulfilled, recover the plan and interrupt the
         #   loop, thus, returning the plan
 
-        """
+        
         for _ in range(self._nb_iterations):
 
-            random_position = ???
-            nearest_idx, nearest_neighbour = ??
-            nearest_position = ???
-            new_position = ???
+            random_position = self.sample_random_position()
+            nearest_idx, nearest_neighbour = self.get_nearest_neighbour(random_position)
+            nearest_position = nearest_neighbour.position
+            new_position = self.get_new_position(random_position, nearest_position)
 
             if self.check_for_collision(new_position):
                 continue
 
-            new_position_node = ???
-            new_position_node.parent = ???
+            new_position_node = Node(new_position[0], new_position[1])
+            new_position_node.parent = [nearest_idx, nearest_neighbour]
             self._tree.append(new_position_node)
 
             if self._target_position is not None:
-                if ???
-                   self._plan = ???
+                delta_x, delta_y = self._target_position[0] - new_position[0], self._target_position[1] - new_position[1]
+                if np.sqrt(delta_x**2 + delta_y**2) < self._traverse_distance:
+                   self._plan = self.recover_plan()
                    break
-        """
+
         return self._plan
 
 
@@ -230,15 +220,22 @@ class RRTPlanner:
         edges = []
 
         # TODO: by going through the elements of the tree, append all node positions as lists in the
-        # "positons" array (defined above) and, if the node is not the first node, in edges, store
+        # "positions" array (defined above) and, if the node is not the first node, in edges, store
         # a list with the index of the parent node and the index of the node that is being iterated over
         # that is, edges has elements of the form [idx_of_parent_of_node, idx_of_node]
         # Hint:
 
-        """for ??? in enumerate(self._tree):
-            positions.append(???)
+        for i, node in enumerate(self._tree):
+            positions.append([
+                node.position[0],
+                node.position[1]
+            ])
+
             if node.parent != []:
-                edges.append(???)"""
+                edges.append([
+                    node.parent[0],
+                    i
+                ])
 
         # NOTE: do not modify the rest of this method
 
@@ -266,6 +263,6 @@ class RRTPlanner:
             ax.plot(self._plan[:,0], self._plan[:,1], color='red')
 
         ax.scatter(self._init_position[0], self._init_position[1], s=50)
-
+        ax.set_title(f'Iteraciones: {self._nb_iterations}, Distancia: {self._traverse_distance}')
         ax.set_aspect('equal')
         plt.show()

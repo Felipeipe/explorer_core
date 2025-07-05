@@ -38,12 +38,13 @@ def rrt_exps():
     max_attempts = 1
 
     input_map = np.zeros((64, 64))
-    add_map_obstacles_2(input_map)
+    add_map_obstacles_3(input_map)
 
-    rrt_planner = RRTPlanner(input_map)
-    rrt_planner.set_init_position([2, 60])
-    rrt_planner.set_target_position([2, 2])
-
+    rrt_planner = RRTPlanner(input_map,
+                             init_position=[2, 60],
+                             target_position=[2, 2],
+                             nb_iterations=20000,
+                             traverse_distance=2.0)
     plan = rrt_planner.generate_rrt()
 
     if plan is None:
@@ -122,6 +123,6 @@ def integration_exps():
 
 if __name__ == '__main__':
 
-    #rrt_exps()
-    #pure_pursuit_exps()
-    integration_exps()
+    # rrt_exps()
+    pure_pursuit_exps()
+    # integration_exps()

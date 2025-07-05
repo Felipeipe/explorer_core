@@ -23,7 +23,11 @@ class DifferentialRobot:
         self._position = None
         self._orientation = None
 
-        self._local_planner = local_planner
+        self._map = None
+        self._map_height = None
+        self._map_width = None
+
+        self._local_planner:PurePursuitPlanner = local_planner
         local_planner.set_vel_limits(self._min_linear_vel,
                                      self._max_linear_vel,
                                      self._min_angular_vel,
@@ -37,16 +41,16 @@ class DifferentialRobot:
         # also set the pose for the local planner, so it knows where the robot is
 
         # TODO: your code here
-
-        pass
-
+        self._position = position
+        self._orientation = orientation
+        self._local_planner.set_pose(position, orientation)
 
 
     def set_map(self, input_map):
         # TODO: assign the input map to the corresponding class member and update
         # the self._map_height, self._map_width class members accordingly
-
-        pass
+        self._map = input_map
+        self._map_height, self._map_width = self._map.shape
 
 
     def step(self, action, dt=0.1):
@@ -65,12 +69,12 @@ class DifferentialRobot:
         # Then, check if this predicted pose is in collision with the environment.
         # If the collision exists, return, otherwise, set the predicted pose as the new robot pose
 
-        """
         # TODO: your code here
-        position = [???, ???]
-        orientation = ???
-        """
-
+        v_x, omega = action
+        orientation = self._orientation + omega*dt
+        pos_x = self._position[0] + v_x*np.cos(self._orientation)*dt
+        pos_y = self._position[1] + v_x*np.sin(self._orientation)*dt
+        position = [pos_x, pos_y]
         if self.check_for_collision(position):
             return
         else:
@@ -163,7 +167,7 @@ class PurePursuitPlanner:
         self._look_ahead_dist = look_ahead_dist
 
         self._plan_idx = 0
-
+        self._plan = None
         self._current_position = None
         self._current_orientation = None
 
@@ -196,9 +200,21 @@ class PurePursuitPlanner:
         # the robots' local frame
         # Note that both the robot's pose and the waypoint position are in global coordinates (map
         # coordinates)
+        T11 = np.cos(self._current_orientation)
+        T21 = np.sin(self._current_orientation)
+        rob_x = self._current_position[0]
+        rob_y = self._current_position[1]
 
-        """x_pos = ???
-        y_pos = ???"""
+        T = np.array([
+            [T11, -T21, 0, rob_x],
+            [T21,  T11, 0, rob_y],
+            [  0,    0, 1,     0],
+            [  0,    0, 0,     1]
+        ])
+
+        wp = np.array([waypoint[0], waypoint[1], 0, 1])
+        wp_prime = np.linalg.inv(T) @ wp
+        x_pos, y_pos = wp_prime[0], wp_prime[1]
 
         return [x_pos, y_pos]
 
@@ -226,22 +242,25 @@ class PurePursuitPlanner:
         # we advance to a following waypoint in the plan
 
         # Hint
+        dist_to_wp = float('inf')
 
-        """for ??? :
+        for i in range(self._plan_idx, len(self._plan)):
+            pos_x, pos_y = self.get_local_pose(self._plan[i])
+            dist_to_wp = np.sqrt(pos_x**2 + pos_y**2)
 
-            ????
             if dist_to_wp <= self._look_ahead_dist:
-                ???
-                break
+                if i + 1 < len(self._plan):
+                    self._plan_idx = i + 1
+                break 
 
         plan_position = self._plan[self._plan_idx]
-        ???
-        if ??? and ???:
+        pos_x, pos_y = self.get_local_pose(plan_position)
+        dist_to_wp = np.sqrt(pos_x**2 + pos_y**2)
+
+        if self._plan_idx == len(self._plan) - 1 and dist_to_wp <= self._dist_thresh:
             self._success = True
-        """
 
-        return self._plan[self._plan_idx]
-
+        return plan_position
 
     def get_ctrl_cmd(self):
 
@@ -249,24 +268,28 @@ class PurePursuitPlanner:
         # - get a new waypoint using the get_waypoint method
         # - get the way point in local coordinates w.r.t the robot
 
-        """waypoint = ???
-        local_position = ???
-
-        x_position = local_position[0]
-        y_position = local_position[1]"""
-
+        waypoint = self.get_waypoint()
+        x_position, y_position = self.get_local_pose(waypoint)
+        l2 = x_position**2 + y_position**2
         # TODO: compute the linear vel using kx, the local position and the linear vel limits
 
-        """linear_vel = ???"""
+        linear_vel = np.clip(
+            self._kx*x_position,
+            self._min_linear_vel,
+            self._max_linear_vel
+        )
 
         # TODO: compute the angular vel using the look_ahead_distance, 
         # the local position and the angular vel limits
 
-        """angular_vel = ???"""
+        angular_vel = np.clip(
+            2*y_position/l2,
+            self._min_angular_vel,
+            self._max_angular_vel
+        )
 
         # NOTE: you need the vel limits to clip the result of directly computing the control commands
         # using the pure pursuit equations. Do not use the limits as normalization factors,
         # just clip the commands so they are always within bounds using np.clip.
 
         return [linear_vel, angular_vel]
-
