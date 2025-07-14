@@ -10,14 +10,14 @@ from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, Grou
 def generate_launch_description():
 
     # Package name
-    package_name='el7009_diff_drive_robot'
+    package_name='explorer_core'
 
     # Launch configurations
     world = LaunchConfiguration('world')
     rviz = LaunchConfiguration('rviz')
 
     # Path to default world 
-    world_path = os.path.join(get_package_share_directory(package_name),'worlds', 'industrial-warehouse.sdf')
+    world_path = os.path.join(get_package_share_directory(package_name),'world', 'industrial-warehouse.sdf')
 
     # Launch Arguments
     declare_world = DeclareLaunchArgument(

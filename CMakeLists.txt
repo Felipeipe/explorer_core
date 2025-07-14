@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(el7009_diff_drive_robot)
+project(explorer_core)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -12,15 +12,10 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 install(
-  DIRECTORY launch urdf config worlds rviz
+  DIRECTORY launch urdf config rviz world
   DESTINATION share/${PROJECT_NAME}
 )
 
-install(
-  PROGRAMS
-  scripts/example_controller.py
-  DESTINATION lib/${PROJECT_NAME}
-)
 
 
 if(BUILD_TESTING)
