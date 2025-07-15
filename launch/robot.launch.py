@@ -11,13 +11,13 @@ def generate_launch_description():
 
     # Package name
     package_name='explorer_core'
-
+    map_pkg = "ionic_demo"
     # Launch configurations
     world = LaunchConfiguration('world')
     rviz = LaunchConfiguration('rviz')
 
     # Path to default world 
-    world_path = os.path.join(get_package_share_directory(package_name),'world', 'industrial-warehouse.sdf')
+    world_path = os.path.join(get_package_share_directory(map_pkg),'worlds', 'ionic.sdf')
 
     # Launch Arguments
     declare_world = DeclareLaunchArgument(
@@ -37,17 +37,17 @@ def generate_launch_description():
     )
 
     # Launch the gazebo server to initialize the simulation
-    gazebo_server = IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource([os.path.join(
-                        get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
-                    )]), launch_arguments={'gz_args': ['-r -s -v1 ', world], 'on_exit_shutdown': 'true'}.items()
-    )
-
-    # Always launch the gazebo client to visualize the simulation
-    gazebo_client = IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource([os.path.join(
-                        get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
-                    )]), launch_arguments={'gz_args': '-g '}.items()
+    gz_server_with_gui = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory('ros_gz_sim'),
+                'launch',
+                'gz_sim.launch.py'
+            )
+        ]),
+        launch_arguments={
+            'gz_args':  str(world_path)  # -r = headless, -g = gui
+        }.items()
     )
 
     # Run the spawner node from the gazebo_ros package. 
@@ -92,7 +92,7 @@ def generate_launch_description():
             '--x', '0.0', '--y', '0.0', '--z', '0.0',
             '--roll', '0', '--pitch', '0', '--yaw', '0',
             '--frame-id', '/map',
-            '--child-frame-id', '/industrial-warehouse'
+            '--child-frame-id', '/ionic'
         ]
     )
     # Launch them all!
@@ -104,8 +104,7 @@ def generate_launch_description():
         # Launch the nodes
         rviz2,
         rsp,
-        gazebo_server,
-        gazebo_client,
+        gz_server_with_gui,
         ros_gz_bridge,
         spawn_diff_bot,
         static_transform_publisher_map_odom,
