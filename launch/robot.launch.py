@@ -11,13 +11,13 @@ def generate_launch_description():
 
     # Package name
     package_name='explorer_core'
-    map_pkg = "ionic_demo"
+    map_pkg = "house"
     # Launch configurations
     world = LaunchConfiguration('world')
     rviz = LaunchConfiguration('rviz')
 
     # Path to default world 
-    world_path = os.path.join(get_package_share_directory(map_pkg),'worlds', 'ionic.sdf')
+    world_path = os.path.join(get_package_share_directory(map_pkg), 'andorra_world.sdf')
 
     # Launch Arguments
     declare_world = DeclareLaunchArgument(
@@ -56,6 +56,8 @@ def generate_launch_description():
                         executable='create',
                         arguments=['-topic', 'robot_description',
                                    '-name', 'diff_bot',
+                                   '-x', '-4.0',
+                                   '-y', '-1.0',
                                    '-z', '0.2'],
                         output='screen'
     )
