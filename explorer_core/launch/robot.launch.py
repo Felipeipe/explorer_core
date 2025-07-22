@@ -11,13 +11,13 @@ def generate_launch_description():
 
     # Package name
     package_name='explorer_core'
-    map_pkg = "house"
+
     # Launch configurations
     world = LaunchConfiguration('world')
     rviz = LaunchConfiguration('rviz')
 
     # Path to default world 
-    world_path = os.path.join(get_package_share_directory(map_pkg), 'andorra_world.sdf')
+    world_path = os.path.join(get_package_share_directory('house'),'andorra_world.sdf')
 
     # Launch Arguments
     declare_world = DeclareLaunchArgument(
@@ -37,17 +37,17 @@ def generate_launch_description():
     )
 
     # Launch the gazebo server to initialize the simulation
-    gz_server_with_gui = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            os.path.join(
-                get_package_share_directory('ros_gz_sim'),
-                'launch',
-                'gz_sim.launch.py'
-            )
-        ]),
-        launch_arguments={
-            'gz_args':  str(world_path)  # -r = headless, -g = gui
-        }.items()
+    gazebo_server = IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([os.path.join(
+                        get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
+                    )]), launch_arguments={'gz_args': ['-r -s -v1 ', world], 'on_exit_shutdown': 'true'}.items()
+    )
+
+    # Always launch the gazebo client to visualize the simulation
+    gazebo_client = IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([os.path.join(
+                        get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
+                    )]), launch_arguments={'gz_args': '-g '}.items()
     )
 
     # Run the spawner node from the gazebo_ros package. 
@@ -56,8 +56,6 @@ def generate_launch_description():
                         executable='create',
                         arguments=['-topic', 'robot_description',
                                    '-name', 'diff_bot',
-                                   '-x', '-4.0',
-                                   '-y', '-1.0',
                                    '-z', '0.2'],
                         output='screen'
     )
@@ -94,7 +92,7 @@ def generate_launch_description():
             '--x', '0.0', '--y', '0.0', '--z', '0.0',
             '--roll', '0', '--pitch', '0', '--yaw', '0',
             '--frame-id', '/map',
-            '--child-frame-id', '/ionic'
+            '--child-frame-id', '/industrial-warehouse'
         ]
     )
     # Launch them all!
@@ -106,7 +104,8 @@ def generate_launch_description():
         # Launch the nodes
         rviz2,
         rsp,
-        gz_server_with_gui,
+        gazebo_server,
+        gazebo_client,
         ros_gz_bridge,
         spawn_diff_bot,
         static_transform_publisher_map_odom,
