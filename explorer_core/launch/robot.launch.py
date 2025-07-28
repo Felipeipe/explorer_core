@@ -17,7 +17,7 @@ def generate_launch_description():
     rviz = LaunchConfiguration('rviz')
 
     # Path to default world 
-    world_path = os.path.join(get_package_share_directory('house'),'andorra_world.sdf')
+    world_path = os.path.join(get_package_share_directory('house'),'hospital', 'hospital.world')
 
     # Launch Arguments
     declare_world = DeclareLaunchArgument(
@@ -56,7 +56,9 @@ def generate_launch_description():
                         executable='create',
                         arguments=['-topic', 'robot_description',
                                    '-name', 'diff_bot',
-                                   '-z', '0.2'],
+                                   '-x', '-5.0',
+                                   '-y', '-1.0',
+                                   '-z', '0.35'],
                         output='screen'
     )
 
@@ -83,18 +85,18 @@ def generate_launch_description():
     )
 
     # Static transform publisher 
-    static_transform_publisher_map_odom = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_transform_publisher',
-        arguments=[
-            # '--x', '-144.0', '--y', '38', '--z', '0.0',
-            '--x', '0.0', '--y', '0.0', '--z', '0.0',
-            '--roll', '0', '--pitch', '0', '--yaw', '0',
-            '--frame-id', '/map',
-            '--child-frame-id', '/industrial-warehouse'
-        ]
-    )
+    static_transform_publisher_base_link_footprint = Node(
+    package='tf2_ros',
+    executable='static_transform_publisher',
+    name='static_transform_publisher_map_odom',
+    arguments=[
+        '0.0', '0.0', '0.0',   # x y z
+        '0', '0', '0',         # roll pitch yaw
+        'base_link', 'base_footprint'
+    ],
+    output='screen'
+)
+
     # Launch them all!
     return LaunchDescription([
         # Declare launch arguments
@@ -108,5 +110,5 @@ def generate_launch_description():
         gazebo_client,
         ros_gz_bridge,
         spawn_diff_bot,
-        static_transform_publisher_map_odom,
+        static_transform_publisher_base_link_footprint,
     ])
