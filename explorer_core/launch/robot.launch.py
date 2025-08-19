@@ -17,7 +17,7 @@ def generate_launch_description():
     rviz = LaunchConfiguration('rviz')
 
     # Path to default world 
-    world_path = os.path.join(get_package_share_directory('house'),'hospital', 'hospital.world')
+    world_path = os.path.join(get_package_share_directory('house'),'andorra_world.sdf')
 
     # Launch Arguments
     declare_world = DeclareLaunchArgument(
