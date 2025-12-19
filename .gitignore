@@ -218,6 +218,5 @@ cython_debug/
 *.toc
 *.vrb
 *.xdy
-*.xml
 *blx.bib
 *.slxc
